@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  test:
+    image: "pybaseball_pull"
+    volumes:
+      - .:/app
+    command: python3 src/load_data.py

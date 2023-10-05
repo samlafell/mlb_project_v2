@@ -1,0 +1,5 @@
+polars==0.19.3
+deltalake==0.10.2
+pyarrow>=11.0.0
+pybaseball==2.2.7
+prefect==2.13
