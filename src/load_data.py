@@ -16,6 +16,7 @@ TABLE_PATH = os.path.join(root, "data", "raw")
 from utils.team_performance import schedule_and_record
 
 YEAR = 2023
+query_year = YEAR - 1
 
 def get_team_schedule_or_fallback(team, year, team_df):
     try:
@@ -35,8 +36,17 @@ def get_team_schedule_or_fallback(team, year, team_df):
 print('running team_df')
 team_df = (
         pl.from_pandas(teams_core())
-        .filter(pl.col("yearID") == YEAR-1)
+        .filter(pl.col("yearID") == query_year)
         .select("teamID", "franchID")
     )  # Polars dataframe
-print('ran team_df')
-print(team_df.shape)
+print(f'team_df has {team_df.shape[0]} rows')
+
+print('running teams')
+teams = (
+    teams_core()
+    .query(f"yearID == {query_year}")[["teamID"]]
+    .drop_duplicates()
+    .to_numpy()
+    .ravel()
+)  # query on pandas df, interesting.
+print(f'teams has {teams.shape[0]} rows')
