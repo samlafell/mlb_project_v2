@@ -28,9 +28,9 @@ To set up the development environment, follow the instructions below:
    ``` 
 
 2. Verify the output:
-```bash
+    ```bash
     docker-compose up
-```
+    ```
 
 These commands encapsulate the application and its dependencies into a Docker container, ensuring that the application runs consistently across different environments.
 
