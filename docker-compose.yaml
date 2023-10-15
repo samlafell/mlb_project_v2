@@ -4,4 +4,4 @@ services:
     image: "pybaseball_pull"
     volumes:
       - .:/app
-    command: python3 src/load_data.py
+    command: python3 src/load_data.py 2023
