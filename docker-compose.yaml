@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   test:
-    image: "pybaseball_pull"
+    image: "mlb_project_v2"
     volumes:
       - .:/app
     command: python3 src/load_data.py 2023
