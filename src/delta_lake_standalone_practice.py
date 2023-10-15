@@ -99,7 +99,7 @@ def set_azure_details():
         "AZURE_CONTAINER_NAME":container
     }
 
-    table_path = "data/raw/schedules"
+    table_path = "test/data/raw/schedules"
     full_path = f'abfs://{container}/{table_path}'
     return full_path, storage_options
 
