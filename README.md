@@ -4,6 +4,13 @@
 
 MLB Project is currently in the testing phase with active development being carried out in a Docker Dev Container. The output and functioning of the services are verified using the `docker-compose up` command. The setup encapsulates the application and its dependencies into a Docker container to ensure consistency across different environments, making the development process smoother and more manageable.
 
+## Updates
+### 10/15/2023:
+- Added in Delta Lake standalone
+    - partitioned by team
+    - contains 2023 game-level data for Teams
+- Added [Azure Storage Info](#azurestorage) (user just needs to add storage container key in an env)
+
 ## Future Integrations
 
 In the subsequent stages of development, the project is slated to integrate with several robust technologies including:
@@ -33,6 +40,23 @@ To set up the development environment, follow the instructions below:
     ```
 
 These commands encapsulate the application and its dependencies into a Docker container, ensuring that the application runs consistently across different environments.
+
+
+<a id="azurestorage"></a>
+#### Set Up Azure Storage Account
+
+Create an Azure Storage Account and find your storage account key. You will use this in the next step.
+
+#### Configure Environment Variables:
+
+Create a .env file in the project root and add your Azure storage account key:
+
+**.env file**:
+```
+AZURE_STORAGE_ACCOUNT_KEY=your_actual_storage_account_key_here
+```
+Note: Never commit your .env file to the repository. It is ignored by default in the .gitignore.
+
 
 ## Contribution
 The project is open for contributions. Feel free to submit issues, or pull requests if you find bugs or have suggestions for improvements.

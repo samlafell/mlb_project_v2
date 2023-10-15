@@ -162,3 +162,5 @@ cython_debug/
 
 # Extra stuff
 **/data/
+/src/delta_lake_standalone_practice.py
+/src/read_delta_lake.py
