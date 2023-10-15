@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # Install the required Python packages
-RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
+RUN pip3 install --upgrade pip && pip3 install -r requirements.txt && pip3 install python-dotenv
 
 # This Dockerfile sets up a containerized environment for running a Python application. It installs the necessary packages and sets the working directory to /app. The application code is copied into the container and can be run from there.
 
