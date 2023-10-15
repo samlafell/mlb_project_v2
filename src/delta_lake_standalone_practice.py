@@ -70,6 +70,10 @@ def pull_data(year):
             ## Stack the DF
             all_schedules.append(schedule_df)
 
+            # Stop to test
+            if team == 'ARI':
+                break
+
     return pl.from_pandas(pd.concat(all_schedules, axis=0, ignore_index=True))
 
 # # Create directory if it doesn't exist in local testing
