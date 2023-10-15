@@ -3,4 +3,4 @@ deltalake==0.10.2
 pyarrow>=11.0.0
 pybaseball==2.2.7
 prefect==2.13
-python-dotenv=1.0.0
+python-dotenv==1.0.0
