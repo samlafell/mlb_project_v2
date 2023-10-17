@@ -118,7 +118,7 @@ def main():
 
     # run it
     schedules_df.write_delta(full_path, 
-                         mode="overwrite",
+                         mode="append",
                          delta_write_options={'partition_by':['Tm']},
                          storage_options=storage_options)
     print(f'Wrote to {full_path}')
