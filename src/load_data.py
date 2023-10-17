@@ -1,4 +1,5 @@
 from pybaseball.lahman import teams_core
+from pybaseball import schedule_and_record
 import pandas as pd
 import polars as pl
 #from prefect import task, flow
@@ -7,7 +8,6 @@ from secrets import randbelow
 from pathlib import Path
 
 # Import utils
-from utils.team_performance import schedule_and_record
 
 # For azure connection
 from dotenv import load_dotenv
