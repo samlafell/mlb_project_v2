@@ -111,7 +111,7 @@ def main():
     print(f'Shape of schedules_df = {schedules_df.shape}')
 
     # Set Azure access info
-    full_path, storage_options = set_azure_details()
+    full_path, storage_options = set_azure_details('data/raw/schedules/')
     print(f'full_path = {full_path}')
 
     # run it
