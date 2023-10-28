@@ -161,6 +161,9 @@ cython_debug/
 
 
 # Extra stuff
+# Dont VC data
 **/data/
 /src/delta_lake_standalone_practice.py
 /src/read_delta_lake.py
+**/bin/**
+src/test_notebook.ipynb
