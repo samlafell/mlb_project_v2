@@ -1,5 +1,4 @@
 from pybaseball.lahman import teams_core
-from pybaseball import schedule_and_record
 import pandas as pd
 import polars as pl
 #from prefect import task, flow
@@ -7,7 +6,13 @@ import pathlib
 from secrets import randbelow
 from pathlib import Path
 
-# Import utils
+## Manipulate sys.path
+import sys
+sys.path.append(str(Path(__file__).resolve().parent)) # had to do this for PyTest to work
+
+# Import utils // helper functions
+from utils.pybaseball_helpers import get_team_schedule_or_fallback
+from utils.azure_funs import set_azure_details
 
 # For azure connection
 from dotenv import load_dotenv
@@ -21,83 +26,70 @@ account_name = os.getenv('ACCOUNT_NAME')
 storage_account_key = os.getenv('STORAGE_ACCOUNT_KEY')
 container = os.getenv('CONTAINER')
 
-def get_team_schedule_or_fallback(team, year, team_df):
-    try:
-        return schedule_and_record(year, team)
-    except Exception as e1:
-        print(e1)
-        try:
-            new_team_id = team_df.filter(pl.col("teamID") == team).select("franchID")[
-                0, 0
-            ]  # Polars dataframe
-            print(new_team_id)
-            return schedule_and_record(year, new_team_id)  # pandas df
-        except Exception as e2:
-            print(e2)
-            return None
 
+def get_teams_df(year):
+    """
+    Returns a Polars dataframe containing the team IDs and franchise IDs for a given year.
 
-def pull_data(year):
-    # Go one year back
+    Args:
+        year (int): The year for which to get the team IDs.
+
+    Returns:
+        pl.DataFrame: A Polars dataframe containing the team IDs and franchise IDs for the given year.
+    """
     team_id_query_year = year - 1
-    # Get team IDs for the year
     team_df = (
         pl.from_pandas(teams_core())
         .filter(pl.col("yearID") == team_id_query_year)
         .select("teamID", "franchID")
-    )  # Polars dataframe
+    )
+    return team_df
 
-    teams = (
-        teams_core()
-        .query(f"yearID == {team_id_query_year}")[["teamID"]]
-        .drop_duplicates()
+def get_teams_list(team_df):
+    """
+    Returns a Polars dataframe containing the team IDs and franchise IDs for a given year.
+
+    Args:
+        year (int): The year for which to get the team IDs.
+
+    Returns:
+        pl.DataFrame: A Polars dataframe containing the team IDs and franchise IDs for the given year.
+    """
+    teams = list(
+        (
+        team_df
+        .select('teamID')
+        .unique()
         .to_numpy()
         .ravel()
+        )
     )
 
-    # Preallocate list to collect dataframes
+    return teams
+
+def pull_data(year, teams, team_df):
+    """
+    Pulls data for a given year from the MLB API and returns a Polars dataframe containing the schedules for all teams.
+
+    Args:
+        year (int): The year for which to pull data.
+        team_df (pl.DataFrame): A Polars dataframe containing the team IDs and franchise IDs.
+
+    Returns:
+        pl.DataFrame: A Polars dataframe containing the schedules for all teams for the given year.
+    """
     all_schedules = []
 
     for team in teams:
         schedule_df = get_team_schedule_or_fallback(
-            team, year, team_df
-        )  # returns a pandas df
+            team, year, team_df.to_pandas()
+        )
 
         if schedule_df is not None:
-            ################ Drop Completely Null Column that was giving problems ################
             schedule_df.drop("Orig. Scheduled", axis=1, inplace=True)
-
-            ## Stack the DF
             all_schedules.append(schedule_df)
 
     return pl.from_pandas(pd.concat(all_schedules, axis=0, ignore_index=True))
-
-# # Create directory if it doesn't exist in local testing
-# def create_dir_if_not_exists(dir_path: Path):
-#     if not dir_path.exists():
-#         dir_path.mkdir(parents=True, exist_ok=True)
-#         print(f"Directory {dir_path} created.")
-#     else:
-#         print(f"Directory {dir_path} already exists.")
-
-# # Set the paths
-# def set_paths():
-#     root = pathlib.Path(__file__).parent.parent.absolute()
-#     TABLE_PATH = Path(root, 'test', "data", "raw")
-#     create_dir_if_not_exists(TABLE_PATH)
-#     return TABLE_PATH
-
-# Set Azure details
-def set_azure_details():
-    storage_options = {
-        "AZURE_STORAGE_ACCOUNT_NAME":account_name,
-        "AZURE_STORAGE_ACCOUNT_KEY": storage_account_key,
-        "AZURE_CONTAINER_NAME":container
-    }
-
-    table_path = "data/raw/schedules"
-    full_path = f'abfs://{container}/{table_path}'
-    return full_path, storage_options
 
 
 # Main Function to run
@@ -108,8 +100,14 @@ def main():
     year = int(sys.argv[1])
     print(f'Year = {year}')
 
+    # Get Teams DF
+    team_df = get_teams_df(year)
+    print(f'Shape of team_df = {team_df.shape}')
+    # Get Teams List
+    teams = get_teams_list(team_df)
+    print(f'Total of {len(teams)} teams in {year} season to pull data for')
     # Pull the data
-    schedules_df = pull_data(year)
+    schedules_df = pull_data(year, teams, team_df)
     print(f'Shape of schedules_df = {schedules_df.shape}')
 
     # Set Azure access info
