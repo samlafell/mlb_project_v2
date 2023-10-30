@@ -5,6 +5,12 @@
 MLB Project is currently in the testing phase with active development being carried out in a Docker Dev Container. The output and functioning of the services are verified using the `docker-compose up` command. The setup encapsulates the application and its dependencies into a Docker container to ensure consistency across different environments, making the development process smoother and more manageable.
 
 ## Updates
+### 10/29/2023:
+- Enabled Schema overwrite since this is in early stages.
+- Enabled the command line program src/extract_and_load.py to be a multi-year pull, will fix later to allow either single or multi-year but for now forcing multi year, could be 2018-2018 though and just pull that one year
+- Overwrote Date column in delta to be an actual date column with years (before it was "Friday, Jul 17" for example.. and now its 7/17/2020), easier to parse later and actually reduced table sizes by 38%, so a very big improvement if thinking on a large scale
+- Optimized a lookup from O(n) to O(1) for backup team codes
+  
 ### 10/15/2023:
 - Added in Delta Lake standalone
     - partitioned by team
