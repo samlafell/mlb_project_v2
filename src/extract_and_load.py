@@ -108,20 +108,26 @@ def main():
     # Arg to define the year we are querying for team performance details
     # The final dataset is 
     import sys
-    year = int(sys.argv[1])
-    print(f'Year = {year}')
+    if len(sys.argv) < 3:
+        print("Usage: python your_script.py <start_year> <end_year>")
+        sys.exit(1)
+    start_year = int(sys.argv[1])
+    end_year = int(sys.argv[2])
 
-    # Get Teams DF
-    team_dict = get_team_ids(year)
-    # Get Teams List
-    teams = get_teams_list(team_dict)
-    print(f'Total of {len(teams)} teams in {year} season to pull data for')
-    # Pull the data
-    schedules_df = pull_data(year, teams, team_dict)
-    print(f'Shape of schedules_df = {schedules_df.shape}')
-    # Fix the dates
-    schedules_df = new_date_col(schedules_df, year)
-    print(f'Shape of schedules_df after date fix = {schedules_df.shape}')
+    for year in range(start_year, end_year+1):
+        print(f"Fetching data for year {year}")
+        
+        # Get Teams DF
+        team_dict = get_team_ids(year)
+        # Get Teams List
+        teams = get_teams_list(team_dict)
+        print(f'Total of {len(teams)} teams in {year} season to pull data for')
+        # Pull the data
+        schedules_df = pull_data(year, teams, team_dict)
+        print(f'Shape of schedules_df = {schedules_df.shape}')
+        # Fix the dates
+        schedules_df = new_date_col(schedules_df, year)
+        print(f'Shape of schedules_df after date fix = {schedules_df.shape}')
 
     # Set Azure access info
     full_path, storage_options = set_azure_details('data/raw/schedules/')
