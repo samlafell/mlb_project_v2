@@ -114,6 +114,7 @@ def main():
     start_year = int(sys.argv[1])
     end_year = int(sys.argv[2])
 
+    final_df = pl.DataFrame()
     for year in range(start_year, end_year+1):
         print(f"Fetching data for year {year}")
         
@@ -124,17 +125,19 @@ def main():
         print(f'Total of {len(teams)} teams in {year} season to pull data for')
         # Pull the data
         schedules_df = pull_data(year, teams, team_dict)
-        print(f'Shape of schedules_df = {schedules_df.shape}')
         # Fix the dates
         schedules_df = new_date_col(schedules_df, year)
         print(f'Shape of schedules_df after date fix = {schedules_df.shape}')
+        # Append
+        final_df = final_df.vstack(schedules_df)
+        print(f'Shape of final_df = {final_df.shape}')
 
     # Set Azure access info
     full_path, storage_options = set_azure_details('data/raw/schedules/')
     print(f'full_path = {full_path}')
 
     # run it
-    schedules_df.write_delta(full_path, 
+    final_df.write_delta(full_path, 
                          mode="overwrite",
                          overwrite_schema=True,
                          delta_write_options={'partition_by':['Tm']},
