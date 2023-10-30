@@ -102,18 +102,7 @@ def new_date_col(schedule_df: pl.DataFrame, year: int) -> pl.DataFrame:
 
     return schedule_df
 
-
-# Main Function to run
-def main():
-    # Arg to define the year we are querying for team performance details
-    # The final dataset is 
-    import sys
-    if len(sys.argv) < 3:
-        print("Usage: python your_script.py <start_year> <end_year>")
-        sys.exit(1)
-    start_year = int(sys.argv[1])
-    end_year = int(sys.argv[2])
-
+def fetch_data(start_year, end_year):
     final_df = pl.DataFrame()
     for year in range(start_year, end_year+1):
         print(f"Fetching data for year {year}")
@@ -128,12 +117,23 @@ def main():
         # Fix the dates
         schedules_df = new_date_col(schedules_df, year)
         print(f'Shape of schedules_df after date fix = {schedules_df.shape}')
+        # Cast Streak column to float -- 2021 the type changes from I64 to F64 (2020 and before it was i64)
+        schedules_df = schedules_df.with_columns(Streak = pl.col('Streak').cast(pl.Float64))
         # Append
         final_df = final_df.vstack(schedules_df)
         print(f'Shape of final_df = {final_df.shape}')
+    return final_df
 
+def write_to_azure(final_df: pl.DataFrame, path: str):
+    """
+    Writes a Polars DataFrame to Azure.
+
+    Args:
+        final_df (pl.DataFrame): The Polars DataFrame to write.
+        path (str): The path to write the DataFrame to.
+    """
     # Set Azure access info
-    full_path, storage_options = set_azure_details('data/raw/schedules/')
+    full_path, storage_options = set_azure_details(path)
     print(f'full_path = {full_path}')
 
     # run it
@@ -143,6 +143,25 @@ def main():
                          delta_write_options={'partition_by':['Tm']},
                          storage_options=storage_options)
     print(f'Wrote to {full_path}')
+
+
+# Main Function to run
+def main():
+    # Arg to define the year we are querying for team performance details
+    # The final dataset is 
+    import sys
+    if len(sys.argv) < 3:
+        print("Usage: python your_script.py <start_year> <end_year>")
+        sys.exit(1)
+        
+    # Set Years
+    start_year = int(sys.argv[1])
+    end_year = int(sys.argv[2])
+    
+    # Fetch the data
+    final_df = fetch_data(start_year, end_year)
+    write_to_azure(final_df, 'data/raw/schedules/')
+
 
 if __name__=='__main__':
     main()
