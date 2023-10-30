@@ -4,4 +4,4 @@ services:
     image: "mlb_project_v2"
     volumes:
       - .:/app
-    command: python3 src/extract_and_load.py 2023
+    command: python3 src/extract_and_load.py 2015 2023
