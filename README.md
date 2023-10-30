@@ -47,6 +47,8 @@ To set up the development environment, follow the instructions below:
 
 These commands encapsulate the application and its dependencies into a Docker container, ensuring that the application runs consistently across different environments.
 
+As of 10/29/2023, the docker-compose up command will actually start pulling all years 2015-2023 into the environment that you've set (read below). It will populate with game-level stats for each team, coming from: http://www.baseball-reference.com/teams/{team}/{year}-schedule-scores.shtml
+
 
 <a id="azurestorage"></a>
 #### Set Up Azure Storage Account
