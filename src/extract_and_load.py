@@ -27,7 +27,7 @@ storage_account_key = os.getenv('STORAGE_ACCOUNT_KEY')
 container = os.getenv('CONTAINER')
 
 
-def get_teams_df(year):
+def get_team_ids(year):
     """
     Returns a Polars dataframe containing the team IDs and franchise IDs for a given year.
 
@@ -35,7 +35,7 @@ def get_teams_df(year):
         year (int): The year for which to get the team IDs.
 
     Returns:
-        pl.DataFrame: A Polars dataframe containing the team IDs and franchise IDs for the given year.
+        dict: A dictionary containing the team IDs and franchise IDs for a given year.
     """
     team_id_query_year = year - 1
     team_df = (
@@ -43,31 +43,23 @@ def get_teams_df(year):
         .filter(pl.col("yearID") == team_id_query_year)
         .select("teamID", "franchID")
     )
-    return team_df
+    
+    return team_df.to_pandas().set_index("teamID")["franchID"].to_dict()
 
-def get_teams_list(team_df):
+def get_teams_list(team_dict):
     """
     Returns a Polars dataframe containing the team IDs and franchise IDs for a given year.
 
     Args:
-        year (int): The year for which to get the team IDs.
+        team_dict (dict): A dictionary containing the team IDs and franchise IDs for a given year.
 
     Returns:
-        pl.DataFrame: A Polars dataframe containing the team IDs and franchise IDs for the given year.
+        list[str]: A list of team IDs for the given year.
     """
-    teams = list(
-        (
-        team_df
-        .select('teamID')
-        .unique()
-        .to_numpy()
-        .ravel()
-        )
-    )
+    return list(team_dict.keys())
 
-    return teams
 
-def pull_data(year, teams, team_df):
+def pull_data(year: int, teams: list[str], team_ids: dict[str, str]):
     """
     Pulls data for a given year from the MLB API and returns a Polars dataframe containing the schedules for all teams.
 
@@ -82,7 +74,7 @@ def pull_data(year, teams, team_df):
 
     for team in teams:
         schedule_df = get_team_schedule_or_fallback(
-            team, year, team_df.to_pandas()
+            team, year, team_ids
         )
 
         if schedule_df is not None:
@@ -90,6 +82,25 @@ def pull_data(year, teams, team_df):
             all_schedules.append(schedule_df)
 
     return pl.from_pandas(pd.concat(all_schedules, axis=0, ignore_index=True))
+
+def new_date_col(schedule_df: pl.DataFrame, year: int) -> pl.DataFrame:
+    """
+    Adds a new date column to the given Polars dataframe.
+
+    Args:
+        schedule_df (pl.DataFrame): A Polars dataframe containing the schedules for all teams for a given year.
+
+    Returns:
+        pl.DataFrame: A Polars dataframe containing the schedules for all teams for a given year, with a new date column.
+    """
+    schedule_df = (schedule_df
+        .with_columns(Clean_Date = pl.col("Date").str.replace(r"\(\d+\)", "").str.strip_chars())
+        .with_columns(Full_date = pl.col('Clean_Date') + pl.lit(f', {year}'))
+        .with_columns(Date = pl.col('Full_date').str.strip_chars().str.to_date("%A, %b %d, %Y"))
+        .drop('Clean_Date', 'Full_date')
+    )
+
+    return schedule_df
 
 
 # Main Function to run
@@ -101,14 +112,16 @@ def main():
     print(f'Year = {year}')
 
     # Get Teams DF
-    team_df = get_teams_df(year)
-    print(f'Shape of team_df = {team_df.shape}')
+    team_dict = get_team_ids(year)
     # Get Teams List
-    teams = get_teams_list(team_df)
+    teams = get_teams_list(team_dict)
     print(f'Total of {len(teams)} teams in {year} season to pull data for')
     # Pull the data
-    schedules_df = pull_data(year, teams, team_df)
+    schedules_df = pull_data(year, teams, team_dict)
     print(f'Shape of schedules_df = {schedules_df.shape}')
+    # Fix the dates
+    schedules_df = new_date_col(schedules_df, year)
+    print(f'Shape of schedules_df after date fix = {schedules_df.shape}')
 
     # Set Azure access info
     full_path, storage_options = set_azure_details('data/raw/schedules/')
@@ -116,7 +129,8 @@ def main():
 
     # run it
     schedules_df.write_delta(full_path, 
-                         mode="append",
+                         mode="overwrite",
+                         overwrite_schema=True,
                          delta_write_options={'partition_by':['Tm']},
                          storage_options=storage_options)
     print(f'Wrote to {full_path}')
